@@ -329,7 +329,7 @@ export default function ProductsPage() {
                                                 >
                                                     <Heart
                                                         size={14}
-                                                        className={favorites.includes(product._id) ? "fill-[#d55b3e] text-[#d55b3e]" : "text-[var(--color-text)]/30"}
+                                                        className={favorites.includes(product._id) ? "fill-[var(--color-secondary)] text-[var(--color-secondary)]" : "text-[var(--color-text)]/30"}
                                                     />
                                                 </button>
                                                 <Link to={`/products/${product._id}`} onClick={() => handleProductClick(product._id)}>

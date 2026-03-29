@@ -6,6 +6,7 @@ import axios from 'axios';
 import { API_URL } from '../config';
 import Header from '../components/Header';
 import { useCart } from '../context/CartContext';
+import { deduplicateBy, getCategoryImage } from '../utils/category_utils';
 
 interface Category {
     id: string;
@@ -41,7 +42,7 @@ const MarketExplorer: React.FC = () => {
             const { data } = await axios.get(`${API_URL}/categories/`);
             // The API returns all categories; we filter for Level 1 (parent=null)
             const mainCats = data.filter((cat: Category) => !cat.parent_id);
-            setCategories(mainCats);
+            setCategories(deduplicateBy(mainCats, 'name'));
 
             // Handle Deep Linking
             const mainId = searchParams.get('mainCategory');
@@ -144,14 +145,11 @@ const MarketExplorer: React.FC = () => {
                                     whileTap={{ scale: 0.98 }}
                                     className="relative h-[400px] rounded-[40px] overflow-hidden cursor-pointer group shadow-lg border border-[var(--color-border)] bg-[var(--color-panel)]"
                                 >
-                                    {cat.banner_image_url && (
-                                        <img 
-                                            src={cat.banner_image_url} 
-                                            alt={cat.name}
-                                            className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-all duration-700 group-hover:scale-110"
-                                            onError={(e) => (e.currentTarget.style.display = 'none')}
-                                        />
-                                    )}
+                                    <img 
+                                        src={getCategoryImage(cat.name, cat.banner_image_url)} 
+                                        alt={cat.name}
+                                        className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-all duration-700 group-hover:scale-110"
+                                    />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                                     
                                     <div className="absolute inset-0 flex flex-col justify-end p-10 z-10 text-white">
@@ -210,13 +208,11 @@ const MarketExplorer: React.FC = () => {
                                         className="bg-[var(--color-surface)] rounded-3xl p-6 border border-[var(--color-border)] cursor-pointer group shadow-sm hover:shadow-xl transition-all"
                                     >
                                         <div className="h-40 rounded-2xl bg-[var(--color-panel)] mb-6 overflow-hidden">
-                                            {sub.thumbnail_image_url ? (
-                                                <img src={sub.thumbnail_image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={sub.name} />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center opacity-20">
-                                                    <Sparkles size={40} />
-                                                </div>
-                                            )}
+                                            <img 
+                                                src={getCategoryImage(sub.name, sub.thumbnail_image_url)} 
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                                alt={sub.name} 
+                                            />
                                         </div>
                                         <h3 className="text-lg font-black leading-tight mb-2">{sub.name}</h3>
                                         <p className="text-xs text-[var(--color-text-dim)] line-clamp-2">

@@ -10,9 +10,9 @@
   --color-primary: #3E7C76;
   /* New Brand Teal */
   --color-primary-rgb: 62, 124, 118;
-  --color-secondary: #d55b3e;
-  /* Obstinate Orange */
-  --color-accent: #3E7C76;
+  --color-secondary: #7b3f00 !important;
+  /* Brand Brown */
+  --color-accent: #3E7C76 !important;
   /* Consistent Teal */
   --color-bg: #ffffff;
   /* White Background */
@@ -266,6 +266,21 @@ body {
 
 .border-brand {
   border-color: var(--color-primary);
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 20s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
 
 .hide-scrollbar::-webkit-scrollbar {

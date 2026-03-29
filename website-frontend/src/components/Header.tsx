@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingBag, LogIn, ChevronLeft, Home, MapPin, Heart } from 'lucide-react';
+import { ShoppingBag, LogIn, ChevronLeft, Home, MapPin, Heart, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -56,7 +56,7 @@ const Header = () => {
     const isMinimalistPage = ['/settings', '/checkout', '/login', '/signup'].includes(location.pathname);
 
     return (
-        <header className="fixed top-0 w-full z-[100] transition-all duration-500">
+        <header className="fixed top-0 w-full z-[100] transition-all duration-500 bg-transparent">
             {/* Top Ticker - Always at top */}
             {!isMinimalistPage && (
                 <HeroTicker
@@ -67,9 +67,9 @@ const Header = () => {
             )}
 
             <nav
-                className={`w-full transition-all duration-500 ${scrolled
+                className={`w-full transition-all duration-500 bg-transparent ${scrolled
                     ? 'py-4 bg-[var(--color-bg)]/80 backdrop-blur-2xl border-b border-[var(--color-border)] shadow-2xl'
-                    : 'py-6 bg-transparent'
+                    : 'py-6'
                     }`}
             >
                 <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
@@ -100,10 +100,10 @@ const Header = () => {
 
                                 <Link to="/" className="flex items-center gap-3 group">
                                     <div className={isNestedPage ? "hidden sm:block" : "block"}>
-                                        <span className="text-xl sm:text-2xl font-black text-[var(--color-text)] tracking-wider font-['Gagalin'] uppercase block leading-none mix-blend-difference">
+                                        <span className={`text-xl sm:text-2xl font-black tracking-wider font-['Gagalin'] uppercase block leading-none ${scrolled ? 'text-[var(--color-primary)]' : 'text-white'}`}>
                                             VIDYA-PRADEEP
                                         </span>
-                                        <span className="text-[10px] sm:text-xs text-[var(--color-text)] font-black uppercase font-['Gagalin'] tracking-wider block mt-1">
+                                        <span className={`text-[10px] sm:text-xs font-black uppercase font-['Gagalin'] tracking-wider block mt-1 ${scrolled ? 'text-[var(--color-text)]' : 'text-white/80'}`}>
                                             MILLETS ARE NOT BORING BOSS 😎🤪
                                         </span>
                                     </div>
@@ -119,8 +119,10 @@ const Header = () => {
                                             <Link
                                                 to={safeLink}
                                                 className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${isActive(safeLink)
-                                                    ? 'bg-[var(--color-primary)] text-[var(--color-bg)] shadow-lg shadow-[var(--color-primary)]/20'
-                                                    : 'text-[var(--color-text)]/60 hover:text-[var(--color-text)] hover:bg-[var(--color-panel)]'
+                                                    ? 'bg-[var(--color-primary)] text-white shadow-lg shadow-[var(--color-primary)]/20'
+                                                    : scrolled 
+                                                        ? 'text-[var(--color-text)]/60 hover:text-[var(--color-text)] hover:bg-[var(--color-panel)]'
+                                                        : 'text-white/70 hover:text-white hover:bg-white/10'
                                                     }`}
                                             >
                                                 {item.label}
@@ -165,12 +167,24 @@ const Header = () => {
 
                                 <Magnetic>
                                     <Link
+                                        to="/categories"
+                                        className="relative flex items-center justify-center w-11 h-11 bg-[var(--color-panel)] hover:bg-white rounded-2xl border border-[var(--color-border)] transition-all group"
+                                    >
+                                        <Search
+                                            size={20}
+                                            className={`${scrolled ? 'text-[var(--color-text)]/80' : 'text-white/80'} group-hover:text-[var(--color-primary)]`}
+                                        />
+                                    </Link>
+                                </Magnetic>
+
+                                <Magnetic>
+                                    <Link
                                         to="/favorites"
                                         className="relative flex items-center justify-center w-11 h-11 bg-[var(--color-panel)] hover:bg-white rounded-2xl border border-[var(--color-border)] transition-all group mr-2"
                                     >
                                         <Heart
                                             size={20}
-                                            className="text-[var(--color-text)]/80 group-hover:text-red-500"
+                                            className={`${scrolled ? 'text-[var(--color-text)]/80' : 'text-white/80'} group-hover:text-red-500`}
                                         />
                                     </Link>
                                 </Magnetic>
@@ -182,7 +196,7 @@ const Header = () => {
                                     >
                                         <ShoppingBag
                                             size={20}
-                                            className="text-[var(--color-text)]/80 group-hover:text-[var(--color-primary)]"
+                                            className={`${scrolled ? 'text-[var(--color-text)]/80' : 'text-white/80'} group-hover:text-[var(--color-primary)]`}
                                         />
 
                                         {cartCount > 0 && (

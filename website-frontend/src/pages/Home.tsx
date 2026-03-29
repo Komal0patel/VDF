@@ -88,7 +88,7 @@ export default function Home() {
             <Header />
 
             {/* Main Hero */}
-            <section className="relative min-h-[100svh] overflow-hidden flex items-center justify-center pt-20">
+            <section className="relative min-h-[100svh] overflow-hidden flex items-center justify-center">
                 {/* Background Video using user uploaded video5.mp4 */}
                 <video
                     ref={heroVideoRef}
@@ -130,7 +130,7 @@ export default function Home() {
                 </div>
 
                 <motion.div
-                    className="relative z-10 text-center px-4"
+                    className="relative z-10 text-center px-4 pt-32 pb-16"
                     initial="hidden"
                     animate="visible"
                     variants={staggerVariants}
@@ -141,7 +141,7 @@ export default function Home() {
                             <motion.div
                                 animate={{ rotate: [0, 10, 0], x: [0, 20, 0] }}
                                 transition={{ repeat: Infinity, duration: 3 }}
-                                className="w-10 h-10 text-[var(--color-primary)] opacity-80"
+                                className="w-10 h-10 text-[var(--color-secondary)] opacity-80"
                             >
                                 <svg viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z" />
@@ -149,7 +149,7 @@ export default function Home() {
                             </motion.div>
                         </div>
 
-                        <h2 className="font-serif text-5xl md:text-7xl lg:text-[5rem] font-black uppercase tracking-[6px] mb-3 drop-shadow-2xl text-[var(--color-primary)]">
+                        <h2 className="font-serif text-5xl md:text-7xl lg:text-[5rem] font-black uppercase tracking-[6px] mb-3 drop-shadow-2xl text-[var(--color-secondary)]">
                             VIDEEPTHA FOODS
                         </h2>
                         <div className="text-xl md:text-2xl text-[var(--color-text)] tracking-[2px] uppercase opacity-90 drop-shadow-md whitespace-nowrap font-medium">
@@ -322,43 +322,59 @@ export default function Home() {
                     Our Nature
                 </motion.h2>
 
-                <div className="relative z-10 w-full overflow-hidden">
-                    <motion.div
-                        animate={{ x: [0, -1000] }}
-                        transition={{ repeat: Infinity, ease: "linear", duration: 10 }}
-                        className="flex gap-6 px-6 w-max"
-                    >
-                        {/* Repeat items for endless scroll */}
-                        {[1, 2, 3].map((set) => (
+                <div className="relative z-10 w-full overflow-hidden py-12">
+                    <div className="animate-marquee hover:pause-animation flex gap-6 px-6">
+                        {/* Repeat items twice for seamless loop */}
+                        {[1, 2].map((set) => (
                             <React.Fragment key={set}>
-                                <div className="w-[320px] bg-white border border-[var(--color-border)] p-8 rounded-3xl shrink-0 hover:border-[var(--color-primary)] transition-colors shadow-sm hover:shadow-md">
-                                    <Sprout size={48} className="text-[var(--color-accent)] mb-6" />
-                                    <h3 className="text-2xl font-black mb-4 text-[var(--color-text)]">Unpolished Grains</h3>
-                                    <p className="text-[var(--color-text-dim)] leading-relaxed">Polishing strips away vital nutrients. Our millets retain their bran layer, providing maximum dietary fiber and slow-release energy.</p>
+                                <div className="w-[280px] bg-[#FDF8F0] border border-[var(--color-border)] p-6 rounded-3xl shrink-0 hover:border-[var(--color-primary)] transition-colors shadow-sm hover:shadow-md">
+                                    <Sprout size={40} className="text-[var(--color-accent)] mb-4" />
+                                    <h3 className="text-xl font-black mb-3 text-[var(--color-text)]">
+                                        <span className="text-[var(--color-secondary)]">Unpolished</span> Grains
+                                    </h3>
+                                    <p className="text-sm text-[var(--color-text-dim)] leading-relaxed">
+                                        No <span className="font-bold text-[var(--color-secondary)]">Wheat</span> or <span className="font-bold text-[var(--color-secondary)]">Maida</span> fillers. Our millets retain their bran layer, providing maximum dietary fiber and slow-release energy.
+                                    </p>
                                 </div>
-                                <div className="w-[320px] bg-white border border-[var(--color-border)] p-8 rounded-3xl shrink-0 hover:border-[var(--color-secondary)] transition-colors shadow-sm hover:shadow-md">
-                                    <Sun size={48} className="text-[var(--color-secondary)] mb-6" />
-                                    <h3 className="text-2xl font-black mb-4 text-[var(--color-text)]">Zero Refined Sugar</h3>
-                                    <p className="text-[var(--color-text-dim)] leading-relaxed">We believe sweetness should come from nature, not factories. We use only pure, unrefined jaggery and raw honey.</p>
+                                <div className="w-[280px] bg-[#F9F0E6] border-2 border-[var(--color-secondary)] p-6 rounded-3xl shrink-0 hover:border-[var(--color-primary)] transition-all shadow-xl hover:shadow-2xl scale-105 z-10 mx-2">
+                                    <Sun size={48} className="text-[var(--color-secondary)] mb-4" />
+                                    <h3 className="text-2xl font-black mb-3 text-[var(--color-text)]">
+                                        <span className="text-[var(--color-secondary)] text-3xl">Zero</span> Whites
+                                    </h3>
+                                    <p className="text-sm text-[var(--color-text)] leading-relaxed font-medium">
+                                        Sweetness should come from nature, not factories. We use <span className="font-bold text-[var(--color-secondary)]">Zero Sugar</span>, <span className="font-bold text-[var(--color-secondary)]">Zero Maida</span>, and <span className="font-bold text-[var(--color-secondary)]">No Wheat</span>, only pure, unrefined jaggery.
+                                    </p>
                                 </div>
-                                <div className="w-[320px] bg-white border border-[var(--color-border)] p-8 rounded-3xl shrink-0 hover:border-[var(--color-primary)] transition-colors shadow-sm hover:shadow-md">
-                                    <ShieldCheck size={48} className="text-[var(--color-primary)] mb-6" />
-                                    <h3 className="text-2xl font-black mb-4 text-[var(--color-text)]">Direct Sourcing</h3>
-                                    <p className="text-[var(--color-text-dim)] leading-relaxed">We trace every ingredient back to the earth. By working directly with village farmers, we ensure fair trade and untampered crop quality.</p>
+                                <div className="w-[280px] bg-[#FDF8F0] border border-[var(--color-border)] p-6 rounded-3xl shrink-0 hover:border-[var(--color-primary)] transition-colors shadow-sm hover:shadow-md">
+                                    <ShieldCheck size={40} className="text-[var(--color-primary)] mb-4" />
+                                    <h3 className="text-xl font-black mb-3 text-[var(--color-text)]">
+                                        <span className="text-[var(--color-secondary)]">Direct</span> Sourcing
+                                    </h3>
+                                    <p className="text-sm text-[var(--color-text-dim)] leading-relaxed">
+                                        We trace every ingredient back to the earth. By working <span className="font-bold text-[var(--color-secondary)]">Direct</span> with village farmers, we ensure fair trade and untampered crop quality.
+                                    </p>
                                 </div>
-                                <div className="w-[320px] bg-white border border-[var(--color-border)] p-8 rounded-3xl shrink-0 hover:border-[var(--color-accent)] transition-colors shadow-sm hover:shadow-md">
-                                    <Droplet size={48} className="text-[var(--color-accent)] mb-6" />
-                                    <h3 className="text-2xl font-black mb-4 text-[var(--color-text)]">Honest Processing</h3>
-                                    <p className="text-[var(--color-text-dim)] leading-relaxed">From wooden-churned (Chekku) cold-pressed oils to stone-ground flours, we preserve delicate antioxidants heat would destroy.</p>
+                                <div className="w-[280px] bg-[#FDF8F0] border border-[var(--color-border)] p-6 rounded-3xl shrink-0 hover:border-[var(--color-accent)] transition-colors shadow-sm hover:shadow-md">
+                                    <Droplet size={40} className="text-[var(--color-accent)] mb-4" />
+                                    <h3 className="text-xl font-black mb-3 text-[var(--color-text)]">
+                                        <span className="text-[var(--color-secondary)]">Honest</span> Processing
+                                    </h3>
+                                    <p className="text-sm text-[var(--color-text-dim)] leading-relaxed">
+                                        Wooden-churned (Chekku) oils and stone-ground flours. <span className="font-bold text-[var(--color-secondary)]">Zero</span> high-heat processing to preserve antioxidants.
+                                    </p>
                                 </div>
-                                <div className="w-[320px] bg-white border border-[var(--color-border)] p-8 rounded-3xl shrink-0 hover:border-[var(--color-primary)] transition-colors shadow-sm hover:shadow-md">
-                                    <Leaf size={48} className="text-[var(--color-primary)] mb-6" />
-                                    <h3 className="text-2xl font-black mb-4 text-[var(--color-text)]">Sattvic Mindset</h3>
-                                    <p className="text-[var(--color-text-dim)] leading-relaxed">Food is spiritual fuel. Every recipe is meticulously tested to ensure it brings balance, health, and clean energy to your family.</p>
+                                <div className="w-[280px] bg-[#FDF8F0] border border-[var(--color-border)] p-6 rounded-3xl shrink-0 hover:border-[var(--color-primary)] transition-colors shadow-sm hover:shadow-md">
+                                    <Leaf size={40} className="text-[var(--color-primary)] mb-4" />
+                                    <h3 className="text-xl font-black mb-3 text-[var(--color-text)]">
+                                        <span className="text-[var(--color-secondary)]">Sattvic</span> Mindset
+                                    </h3>
+                                    <p className="text-sm text-[var(--color-text-dim)] leading-relaxed">
+                                        Food is spiritual fuel. Every recipe is <span className="font-bold text-[var(--color-secondary)]">Sattvic</span>—clean, natural, and specifically designed for family health.
+                                    </p>
                                 </div>
                             </React.Fragment>
                         ))}
-                    </motion.div>
+                    </div>
                 </div>
             </section>
 

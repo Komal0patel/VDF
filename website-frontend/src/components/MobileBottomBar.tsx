@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, ShoppingBag, User } from "lucide-react";
+import { Home, ShoppingBag, User, BookOpen } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const MobileBottomNav = () => {
@@ -36,14 +36,14 @@ const MobileBottomNav = () => {
                     Shop
                 </Link>
 
-                {/* Market Explorer */}
+                {/* Stories */}
                 <Link
-                    to="/market-explorer"
-                    className={`flex flex-col items-center justify-center text-xs ${isActive("/market-explorer") ? "text-[var(--color-primary)] font-bold scale-105" : "text-[var(--color-text)]/60"
+                    to="/stories"
+                    className={`flex flex-col items-center justify-center text-xs ${isActive("/stories") ? "text-[var(--color-primary)] font-bold scale-105" : "text-[var(--color-text)]/60"
                         }`}
                 >
-                    <ShoppingBag size={20} />
-                    Market
+                    <BookOpen size={20} />
+                    Stories
                 </Link>
 
                 {/* Profile / Login */}
