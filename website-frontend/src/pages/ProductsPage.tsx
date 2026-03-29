@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Leaf, Heart, FilterX, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
@@ -32,12 +32,8 @@ export default function ProductsPage() {
     const [selectedWeights, setSelectedWeights] = useState<Record<string, string>>({});
     const { addToCart, formatPrice, currency } = useCart();
     const { openAuthModal } = useAuth();
-    const [categoryData, setCategoryData] = useState<any>(null);
     const [allCategories, setAllCategories] = useState<any[]>([]);
 
-    const handleProductClick = (productId: string) => {
-        trackView(productId);
-    };
 
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -79,20 +75,6 @@ export default function ProductsPage() {
             }
         };
 
-        const fetchCategoryDetails = async () => {
-            if (selectedCategory && selectedCategory !== 'All') {
-                try {
-                    const res = await fetch(`${API_URL}/categories/?id=${selectedCategory}`);
-                    const data = await res.json();
-                    const currentCat = data.find((c: any) => c.id === selectedCategory || c._id === selectedCategory);
-                    setCategoryData(currentCat);
-                } catch (err) {
-                    console.error('Error fetching category details:', err);
-                }
-            } else {
-                setCategoryData(null);
-            }
-        };
 
         const fetchAllCategories = async () => {
             try {
@@ -106,7 +88,6 @@ export default function ProductsPage() {
 
         fetchProducts();
         fetchFavorites();
-        fetchCategoryDetails();
         fetchAllCategories();
     }, [currency, selectedCategory]);
 
@@ -141,17 +122,6 @@ export default function ProductsPage() {
         }
     };
 
-    const trackView = async (productId: string) => {
-        try {
-            fetch(`${API_URL}/track-event/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ product_id: productId, event_type: 'view' })
-            });
-        } catch (err) {
-            console.error('Track view error:', err);
-        }
-    };
 
     const highestPriceInDb = Math.max(...products.map(p => p.price), 10000);
 
@@ -196,59 +166,6 @@ export default function ProductsPage() {
             <main className="relative z-10 pt-32 pb-20 px-6">
                 <div className="max-w-7xl mx-auto">
 
-                    {/* Category Banner or Title Section */}
-                    {categoryData ? (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="relative h-[300px] md:h-[400px] rounded-[40px] overflow-hidden mb-16 border border-[var(--color-border)] shadow-2xl"
-                        >
-                            <img
-                                src={categoryData.banner_image_url || categoryData.media_url}
-                                className="absolute inset-0 w-full h-full object-cover"
-                                alt={categoryData.name}
-                            />
-                            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-                            <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-8 text-white">
-                                <span className="uppercase tracking-[0.4em] font-black text-amber-400 text-[10px] mb-4">Discovery Archive</span>
-                                <h1 className="text-5xl md:text-7xl font-black mb-6 font-serif tracking-tight">
-                                    {categoryData.banner_details?.title || categoryData.name}
-                                </h1>
-                                <p className="max-w-2xl text-white/90 text-lg md:text-xl font-medium leading-relaxed">
-                                    {categoryData.banner_details?.description || categoryData.description}
-                                </p>
-                            </div>
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8 }}
-                            className="text-center mb-16"
-                        >
-                            <motion.h1
-                                className="text-6xl md:text-8xl font-black text-[var(--color-primary)] mb-6 font-serif"
-                                animate={{
-                                    textShadow: [
-                                        "0 0 20px rgba(92, 141, 55, 0.3)",
-                                        "0 0 40px rgba(92, 141, 55, 0.5)",
-                                        "0 0 20px rgba(92, 141, 55, 0.3)"
-                                    ]
-                                }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                            >
-                                Grand <span className="italic text-[var(--color-secondary)]">Village</span> Market
-                            </motion.h1>
-                            <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.5 }}
-                                className="text-xl text-[var(--color-text)]/70 max-w-2xl mx-auto"
-                            >
-                                Browsing {selectedCategory === 'All' ? 'Every Artisanal Treasure' : (allCategories.find(c => (c.id === selectedCategory || c._id === selectedCategory))?.name || 'Selected Category')}
-                            </motion.p>
-                        </motion.div>
-                    )}
 
                     {/* Sticky Modern Filter Bar */}
                     <div className="sticky top-20 z-40 bg-[var(--color-bg)]/80 backdrop-blur-xl border-b border-[var(--color-border)] mb-12 py-4">
@@ -332,11 +249,11 @@ export default function ProductsPage() {
                                                         className={favorites.includes(product._id) ? "fill-[var(--color-secondary)] text-[var(--color-secondary)]" : "text-[var(--color-text)]/30"}
                                                     />
                                                 </button>
-                                                <Link to={`/products/${product._id}`} onClick={() => handleProductClick(product._id)}>
-                                                    <h2 className="text-xl md:text-2xl font-serif font-black text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors line-clamp-2">
+                                                <div className="flex items-center gap-2">
+                                                    <h2 className="text-xl md:text-2xl font-serif font-black text-[var(--color-text)] transition-colors line-clamp-2">
                                                         {product.name}
                                                     </h2>
-                                                </Link>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text)]/40">100% Organic Heritage</span>

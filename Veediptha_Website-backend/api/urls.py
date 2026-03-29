@@ -43,5 +43,8 @@ urlpatterns = [
     path('favorites/<str:product_id>/', website_views.FavoriteRemoveView.as_view(), name='favorite-remove'),
     path('track-event/', website_views.TrackProductEventView.as_view(), name='track-event'),
     path('admin/analytics/', website_views.AdminAnalyticsView.as_view(), name='admin-analytics'),
+    path('seed-all/', website_views.SeedAllView.as_view(), name='seed-all'),
+    path('hierarchy/', website_views.FullHierarchyView.as_view(), name='hierarchy'),
+    path('excel-categories/', website_views.ListExcelCategoriesView.as_view(), name='excel-categories'),
+    path('excel-tail/', website_views.InspectExcelTailView.as_view(), name='excel-tail'),
 ]
-

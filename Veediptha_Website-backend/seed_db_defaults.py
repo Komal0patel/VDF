@@ -32,12 +32,14 @@ def seed_split_defaults():
         defaults={
             'name': 'Premium Typography',
             'font_urls': {
-                'heading': 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap',
-                'sans': 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap'
+                'heading': 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;700&family=Playfair+Display:wght@400;700;900&display=swap',
+                'body': 'https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Inter:wght@400;700&display=swap',
+                'mono': 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap'
             },
             'typography_settings': {
-                'headingFont': 'Playfair Display',
-                'bodyFont': 'Outfit'
+                'headingFont': '"Cormorant Garamond", "Playfair Display", serif',
+                'bodyFont': '"Outfit", "Inter", system-ui, sans-serif',
+                'monoFont': '"IBM Plex Mono", monospace'
             }
         }
     )

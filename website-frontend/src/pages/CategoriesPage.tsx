@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Leaf, ChevronRight, ArrowLeft, Search, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/Header';
@@ -197,11 +197,9 @@ export default function CategoriesPage() {
                                             <div className="p-4 border-t border-[var(--color-border)]">
                                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--color-text)]/30 px-4 mb-2 block">Harvests</span>
                                                 {filteredResults?.matchedProducts.map((p) => (
-                                                    <Link 
-                                                        to={`/products/${p._id}`}
+                                                    <div 
                                                         key={p._id}
-                                                        onClick={() => setSearchTerm('')}
-                                                        className="w-full flex items-center gap-4 p-3 rounded-2xl hover:bg-[var(--color-bg)]/50 transition-all group"
+                                                        className="w-full flex items-center gap-4 p-3 rounded-2xl bg-[var(--color-bg)]/50 transition-all group"
                                                     >
                                                         <div className="w-12 aspect-square rounded-xl overflow-hidden bg-white border border-[var(--color-border)] p-1">
                                                             <img src={p.images?.[0] || 'https://via.placeholder.com/100'} className="w-full h-full object-contain group-hover:scale-110 transition-transform" alt={p.name} />
@@ -210,8 +208,8 @@ export default function CategoriesPage() {
                                                             <p className="font-serif font-black text-lg group-hover:text-[var(--color-primary)] transition-colors">{p.name}</p>
                                                             <p className="text-[10px] text-[var(--color-text)]/40 font-bold uppercase tracking-widest">₹{p.price}</p>
                                                         </div>
-                                                        <ChevronRight className="text-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" size={18} />
-                                                    </Link>
+                                                        <div className="text-[var(--color-text)]/20 font-black uppercase text-[8px] tracking-widest">Details Locked</div>
+                                                    </div>
                                                 ))}
                                             </div>
                                         )}

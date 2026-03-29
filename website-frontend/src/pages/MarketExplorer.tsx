@@ -21,7 +21,16 @@ interface Category {
         subtitle?: string;
         description?: string;
     };
+    category_id?: string;
     subcategories?: Category[];
+}
+
+interface Product {
+    id: string;
+    name: string;
+    price: number;
+    description: string;
+    images: string[];
 }
 
 const MarketExplorer: React.FC = () => {
@@ -30,8 +39,11 @@ const MarketExplorer: React.FC = () => {
     const [searchParams] = useSearchParams();
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
-    const [viewLevel, setViewLevel] = useState<1 | 2>(1);
+    const [viewLevel, setViewLevel] = useState<1 | 2 | 3>(1);
     const [selectedMain, setSelectedMain] = useState<Category | null>(null);
+    const [selectedSub, setSelectedSub] = useState<Category | null>(null);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [fetchingProducts, setFetchingProducts] = useState(false);
 
     useEffect(() => {
         fetchCategories();
@@ -44,7 +56,7 @@ const MarketExplorer: React.FC = () => {
             const mainCats = data.filter((cat: Category) => !cat.parent_id);
             setCategories(deduplicateBy(mainCats, 'name'));
 
-            // Handle Deep Linking
+            // Handle Deep Linking (Optional)
             const mainId = searchParams.get('mainCategory');
             if (mainId) {
                 const found = mainCats.find((c: Category) => c.id === mainId || c._id === mainId);
@@ -60,20 +72,52 @@ const MarketExplorer: React.FC = () => {
         }
     };
 
+    const fetchProducts = async (categoryId: string) => {
+        setFetchingProducts(true);
+        try {
+            const { data } = await axios.get(`${API_URL}/products/?category=${categoryId}`);
+            setProducts(data);
+        } catch (err) {
+            console.error("Failed to fetch products", err);
+        } finally {
+            setFetchingProducts(false);
+        }
+    };
+
     const handleMainClick = (cat: Category) => {
         if (cat.subcategories && cat.subcategories.length > 0) {
             setSelectedMain(cat);
             setViewLevel(2);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-            // No subcategories? Go straight to product list
-            navigate(`/products?category=${cat.id}`);
+            // No subcategories? Go to Level 3 directly (showing products of Main)
+            setSelectedMain(cat);
+            setSelectedSub(null);
+            setViewLevel(3);
+            fetchProducts(cat.id || cat._id);
         }
     };
 
+    const handleSubClick = (sub: Category) => {
+        setSelectedSub(sub);
+        setViewLevel(3);
+        fetchProducts(sub.id || sub._id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     const handleBack = () => {
-        setViewLevel(1);
-        setSelectedMain(null);
+        if (viewLevel === 3) {
+            if (selectedSub) {
+                setViewLevel(2);
+                setSelectedSub(null);
+            } else {
+                setViewLevel(1);
+                setSelectedMain(null);
+            }
+        } else if (viewLevel === 2) {
+            setViewLevel(1);
+            setSelectedMain(null);
+        }
     };
 
     if (loading) {
@@ -92,7 +136,7 @@ const MarketExplorer: React.FC = () => {
                 {/* Header Section */}
                 <div className="mb-12">
                     <div className="flex items-center gap-4 mb-4">
-                        {viewLevel === 2 && (
+                        {viewLevel > 1 && (
                             <button 
                                 onClick={handleBack}
                                 className="p-2 hover:bg-[var(--color-panel)] rounded-full transition-colors border border-[var(--color-border)]"
@@ -101,13 +145,17 @@ const MarketExplorer: React.FC = () => {
                             </button>
                         )}
                         <h1 className="text-4xl md:text-6xl font-black font-serif italic tracking-tight">
-                            {viewLevel === 1 ? 'Discovery Lobby' : selectedMain?.name}
+                            {viewLevel === 1 ? 'Discovery Lobby' : 
+                             viewLevel === 2 ? selectedMain?.name : 
+                             selectedSub?.name || selectedMain?.name}
                         </h1>
                     </div>
                     <p className="text-lg opacity-60 max-w-2xl">
                         {viewLevel === 1 
                             ? 'Our artisanal collections rooted in tradition, crafted for the modern wellness seeker.' 
-                            : selectedMain?.banner_details?.description || 'Explore our refined collection of essentials.'}
+                            : viewLevel === 2 
+                            ? selectedMain?.banner_details?.description || `Explore our refined collection of ${selectedMain?.name}.`
+                            : `Curated collection of ${selectedSub?.name || selectedMain?.name} essentials.`}
                     </p>
                 </div>
 
@@ -139,7 +187,7 @@ const MarketExplorer: React.FC = () => {
 
                             {categories.map((cat) => (
                                 <motion.div 
-                                    key={cat.id}
+                                    key={cat.id || cat._id}
                                     onClick={() => handleMainClick(cat)}
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
@@ -161,7 +209,7 @@ const MarketExplorer: React.FC = () => {
                                 </motion.div>
                             ))}
                         </motion.div>
-                    ) : (
+                    ) : viewLevel === 2 ? (
                         <motion.div 
                             key="level-2"
                             initial={{ opacity: 0, x: 50 }}
@@ -169,41 +217,12 @@ const MarketExplorer: React.FC = () => {
                             exit={{ opacity: 0, x: -50 }}
                             className="space-y-12"
                         >
-                            {/* Hero Banner for Level 2 */}
-                            <div className="relative h-[300px] rounded-[40px] overflow-hidden border border-[var(--color-border)] shadow-xl">
-                                <img 
-                                    src={selectedMain?.banner_image_url || ''} 
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                    alt="banner"
-                                />
-                                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-                                <div className="absolute inset-0 flex flex-col justify-center p-12 text-white">
-                                    <span className="uppercase tracking-[0.3em] font-bold text-amber-400 text-xs mb-4">Discovery Layer</span>
-                                    <h2 className="text-5xl font-black mb-4 font-serif">{selectedMain?.banner_details?.title || selectedMain?.name}</h2>
-                                    <p className="max-w-xl text-white/90 leading-relaxed font-medium">
-                                        {selectedMain?.banner_details?.description}
-                                    </p>
-                                </div>
-                            </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {/* "Browse All in [Main]" option */}
-                                <motion.div 
-                                    onClick={() => navigate(`/products?category=${selectedMain?.id}`)}
-                                    whileHover={{ y: -5 }}
-                                    className="bg-[var(--color-panel)] rounded-3xl p-8 border border-[var(--color-border)] cursor-pointer group hover:bg-amber-500/10 transition-colors flex flex-col justify-between"
-                                >
-                                    <div>
-                                        <ShoppingBag size={24} className="text-amber-500 mb-6" />
-                                        <h3 className="text-xl font-bold leading-tight">Everything in {selectedMain?.name}</h3>
-                                    </div>
-                                    <ChevronRight size={20} className="text-[var(--color-text-dim)] group-hover:translate-x-2 transition-transform" />
-                                </motion.div>
-
                                 {selectedMain?.subcategories?.map((sub) => (
                                     <motion.div 
-                                        key={sub.id}
-                                        onClick={() => navigate(`/products?category=${sub.id}`)}
+                                        key={sub.id || sub._id}
+                                        onClick={() => handleSubClick(sub)}
                                         whileHover={{ y: -5 }}
                                         className="bg-[var(--color-surface)] rounded-3xl p-6 border border-[var(--color-border)] cursor-pointer group shadow-sm hover:shadow-xl transition-all"
                                     >
@@ -221,15 +240,61 @@ const MarketExplorer: React.FC = () => {
                                     </motion.div>
                                 ))}
                             </div>
-
-                            <div className="flex justify-center pt-8">
-                                <button 
-                                    onClick={() => navigate('/products')}
-                                    className="flex items-center gap-3 px-8 py-4 bg-[var(--color-panel)] rounded-full text-sm font-bold border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-all uppercase tracking-widest"
-                                >
-                                    <FilterX size={18} /> Clear Path & Show All Products
-                                </button>
-                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div 
+                            key="level-3"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 1.05 }}
+                            className="space-y-12"
+                        >
+                            {fetchingProducts ? (
+                                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                    <Loader2 className="animate-spin text-amber-500" size={40} />
+                                    <p className="font-bold tracking-widest text-xs uppercase opacity-40">Gathering Heritage items...</p>
+                                </div>
+                            ) : products.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                                    {products.map((product) => (
+                                        <motion.div 
+                                            key={product.id}
+                                            className="bg-[var(--color-panel)] rounded-[32px] overflow-hidden border border-[var(--color-border)] shadow-sm group relative"
+                                        >
+                                            <div className="aspect-[4/5] bg-[var(--color-surface)] relative overflow-hidden">
+                                                {product.images?.[0] ? (
+                                                    <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-amber-500/20">
+                                                        <ShoppingBag size={64} />
+                                                    </div>
+                                                )}
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
+                                            </div>
+                                            <div className="p-8">
+                                                <h3 className="text-xl font-black mb-2 line-clamp-1">{product.name}</h3>
+                                                <p className="text-sm opacity-60 mb-6 line-clamp-2 min-h-[40px]">{product.description || 'Traditional ingredients prepared with contemporary standards.'}</p>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-2xl font-black text-amber-500">₹{product.price || '---'}</span>
+                                                    <button 
+                                                        disabled
+                                                        className="px-6 py-2 bg-[var(--color-border)] text-[var(--color-text-dim)] rounded-full text-xs font-bold uppercase tracking-wider cursor-not-allowed opacity-50"
+                                                    >
+                                                        Details Locked
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-20 gap-4 bg-[var(--color-panel)] rounded-[40px] border border-dashed border-[var(--color-border)]">
+                                    <FilterX className="text-amber-500/30" size={64} />
+                                    <h3 className="text-2xl font-bold">No items found here yet</h3>
+                                    <p className="text-[var(--color-text-dim)]">Our artisans are still preparing the best for this section.</p>
+                                    <button onClick={handleBack} className="mt-4 text-amber-500 font-bold uppercase tracking-widest text-xs p-4 hover:bg-amber-500/10 rounded-2xl transition-all">Go Back</button>
+                                </div>
+                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>

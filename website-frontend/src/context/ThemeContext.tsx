@@ -163,8 +163,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
 
         // Typography Names
-        root.style.setProperty('--font-sans', typography.typography_settings.bodyFont || 'Outfit, sans-serif');
-        root.style.setProperty('--font-serif', typography.typography_settings.headingFont || 'Playfair Display, serif');
+        root.style.setProperty('--font-sans', typography.typography_settings.bodyFont || '"Outfit", "Inter", system-ui, sans-serif');
+        root.style.setProperty('--font-serif', typography.typography_settings.headingFont || '"Cormorant Garamond", "Playfair Display", serif');
+        root.style.setProperty('--font-mono', '"IBM Plex Mono", monospace');
 
         localStorage.setItem('theme-mode', 'dark');
     }, [theme]);

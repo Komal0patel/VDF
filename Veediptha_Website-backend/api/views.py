@@ -189,6 +189,167 @@ class AdminAnalyticsView(APIView):
         analytics = ProductAnalytics.objects.all().order_by('-views')
         return Response([{"product_id": a.product_id, "views": a.views} for a in analytics])
 
+class SeedAllView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def get(self, request):
+        import os, traceback
+        from django.utils.text import slugify
+        from .models import Category, Product
+        try:
+            import pandas as pd
+        except ImportError:
+            return Response({"error": "pandas is not installed"}, status=500)
+            
+        try:
+            excel_path = next((p for p in [
+                'c:\\Users\\hp\\OneDrive\\Desktop\\finalVDPFWebsite\\Final_Menu_Categories_Products.xlsx',
+                'c:\\Users\\hp\\OneDrive\\Desktop\\finalVDPFWebsite\\Final_Menu_Category_Products.xlsx'
+            ] if os.path.exists(p)), None)
+            
+            if not excel_path: return Response({"error": "Excel file not found"}, status=400)
+            
+            df = pd.read_excel(excel_path, sheet_name='All Products Mapping')
+            # Normalize column names
+            df.columns = [str(c).strip() for c in df.columns]
+            cols = df.columns.tolist()
+            
+            m_col = next((c for c in cols if 'Main' in c), None)
+            s_col = next((c for c in cols if 'Sub' in c), None)
+            p_col = next((c for c in cols if 'Prod' in c or 'Item' in c), None)
+            
+            if not m_col: return Response({"error": "Main Category column not found"}, status=400)
+
+            # Clear DB
+            Product.objects.all().delete()
+            # Clear categories in order (child then parent)
+            Category.objects.filter(parent__isnull=False).delete()
+            Category.objects.filter(parent__isnull=True).delete()
+            
+            counts = {"main": 0, "sub": 0, "products": 0}
+            
+            for _, row in df.iterrows():
+                m_name = str(row[m_col]).strip() if pd.notna(row[m_col]) else ''
+                s_name = str(row[s_col]).strip() if s_col and pd.notna(row[s_col]) else ''
+                p_name = str(row[p_col]).strip() if p_col and pd.notna(row[p_col]) else ''
+                
+                if not m_name or m_name.lower() == 'nan': continue
+                
+                # 1. Main Category
+                main_cat, created = Category.objects.get_or_create(
+                    name=m_name,
+                    parent=None,
+                    defaults={'slug': slugify(m_name)}
+                )
+                if created: counts["main"] += 1
+                
+                # 2. Subcategory
+                target_cat = main_cat
+                if s_name and s_name.lower() != 'nan':
+                     sub_cat, created = Category.objects.get_or_create(
+                         name=s_name,
+                         parent=main_cat,
+                         defaults={'slug': slugify(f"{m_name}-{s_name}")[:50]}
+                     )
+                     if created: counts["sub"] += 1
+                     target_cat = sub_cat
+                
+                # 3. Product
+                if p_name and p_name.lower() != 'nan':
+                    Product.objects.create(
+                        name=p_name,
+                        price=0.0,
+                        stock=100,
+                        category_ids=[str(target_cat.id)],
+                        is_active=True
+                    )
+                    counts["products"] += 1
+            
+            return Response({"status": "Fresh seeding complete", "counts": counts})
+        except Exception as e:
+            return Response({"error": str(e), "traceback": traceback.format_exc()}, status=500)
+
+class FullHierarchyView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def get(self, request):
+        import traceback
+        try:
+            from .models import Category, Product
+            mains = Category.objects.filter(parent__isnull=True).order_by('name')
+            hierarchy = []
+            for m in mains:
+                subs = []
+                for s in m.subcategories.all().order_by('name'):
+                    # Use a simpler filter to avoid MongoDB JSONField issues if any
+                    prods = []
+                    s_id_str = str(s.id)
+                    all_prods = Product.objects.all()
+                    for p in all_prods:
+                        if s_id_str in p.category_ids:
+                             prods.append(p.name)
+                    
+                    subs.append({"name": s.name, "products": prods})
+                
+                # Direct products
+                direct_prods = []
+                m_id_str = str(m.id)
+                all_prods = Product.objects.all()
+                for p in all_prods:
+                    if m_id_str in p.category_ids:
+                         direct_prods.append(p.name)
+                
+                hierarchy.append({
+                    "main": m.name,
+                    "subcategories": subs,
+                    "direct_products": direct_prods
+                })
+            return Response(hierarchy)
+        except Exception as e:
+            return Response({"error": str(e), "traceback": traceback.format_exc()}, status=500)
+
+class ListExcelCategoriesView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def get(self, request):
+        import pandas as pd
+        import os
+        paths_to_try = [
+            'c:\\Users\\hp\\OneDrive\\Desktop\\finalVDPFWebsite\\Final_Menu_Categories_Products.xlsx',
+            'c:\\Users\\hp\\OneDrive\\Desktop\\finalVDPFWebsite\\Final_Menu_Category_Products.xlsx',
+        ]
+        excel_path = next((p for p in paths_to_try if os.path.exists(p)), None)
+        if not excel_path: return Response({"error": "File not found"}, status=404)
+        
+        df = pd.read_excel(excel_path, sheet_name='All Products Mapping')
+        m_col = next((c for c in df.columns if 'Main' in str(c)), None)
+        if not m_col: return Response({"error": "Main column not found"}, status=400)
+        
+        # Strip and find unique mains
+        unique_mains = []
+        for x in df[m_col]:
+             if pd.notna(x):
+                  val = str(x).strip()
+                  if val and val.lower() != 'nan' and val not in unique_mains:
+                       unique_mains.append(val)
+        
+        return Response({
+            "excel_rows": len(df),
+            "found_mains": unique_mains,
+            "mains_count": len(unique_mains)
+        })
+
+class InspectExcelTailView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def get(self, request):
+        import pandas as pd
+        import os
+        paths_to_try = [
+            'c:\\Users\\hp\\OneDrive\\Desktop\\finalVDPFWebsite\\Final_Menu_Categories_Products.xlsx'
+        ]
+        excel_path = next((p for p in paths_to_try if os.path.exists(p)), None)
+        if not excel_path: return Response({"error": "File not found"}, status=404)
+        
+        df = pd.read_excel(excel_path, sheet_name='All Products Mapping')
+        return Response(df.tail(30).fillna('').to_dict(orient='records'))
+
 class DetectLocationView(APIView):
     permission_classes = [permissions.AllowAny]
     def get(self, request):
