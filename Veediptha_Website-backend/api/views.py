@@ -1,0 +1,195 @@
+from rest_framework import generics, status, permissions
+from .permissions import IsRoleBasedAdminOrReadOnly
+import datetime
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .models import (
+    Page, Product, Category, Coupon, Story, Hero, Navigation, 
+    WebsiteTheme, WebsiteBranding, WebsiteTypography, WebsiteFooter,
+    Policy, Promotion, SupportTicket, Order
+)
+from .currency_utils import get_usd_inr_rate
+from .serializers import (
+    PageSerializer, PageListSerializer, ProductSerializer, ProductLiteSerializer, CategorySerializer, 
+    CouponSerializer, StorySerializer, HeroSerializer, NavigationSerializer,
+    WebsiteThemeSerializer, WebsiteBrandingSerializer, WebsiteTypographySerializer,
+    WebsiteFooterSerializer, PolicySerializer, OrderSerializer, PromotionSerializer,
+    SupportTicketSerializer, StoryListSerializer
+)
+from accounts.models import Favorite, ProductAnalytics
+from django.db.models import F
+import requests
+import logging
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
+
+logger = logging.getLogger('api')
+
+class PageListView(generics.ListAPIView):
+    queryset = Page.objects.all()
+    serializer_class = PageListSerializer
+    permission_classes = [permissions.AllowAny]
+
+class PageDetailView(generics.RetrieveAPIView):
+    queryset = Page.objects.all()
+    serializer_class = PageSerializer
+    lookup_field = 'id'
+    permission_classes = [permissions.AllowAny]
+
+class ProductListView(generics.ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductLiteSerializer
+    permission_classes = [permissions.AllowAny]
+
+class ProductDetailView(generics.RetrieveAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    lookup_field = 'id'
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        product_id = self.kwargs.get('id')
+        if not product_id: return response
+        analytics, _ = ProductAnalytics.objects.get_or_create(product_id=str(product_id))
+        response.data['analytics'] = {'total_views': analytics.views, 'current_watching': analytics.current_watching}
+        return response
+
+class CategoryListView(generics.ListAPIView):
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = Category.objects.all().order_by('order', 'name')
+        parent_id = self.request.query_params.get('parent')
+        if parent_id:
+            if parent_id == 'null':
+                queryset = queryset.filter(parent__isnull=True)
+            else:
+                queryset = queryset.filter(parent_id=parent_id)
+        return queryset
+
+class CouponListView(generics.ListAPIView):
+    queryset = Coupon.objects.all()
+    serializer_class = CouponSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class ValidateCouponView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request):
+        code = request.data.get('code')
+        try:
+            coupon = Coupon.objects.get(code=code, is_active=True)
+            return Response({"valid": True, "discount_value": float(coupon.discount_value)})
+        except Coupon.DoesNotExist:
+            return Response({"valid": False, "message": "Invalid code"}, status=400)
+
+class StoryListView(generics.ListAPIView):
+    queryset = Story.objects.all()
+    serializer_class = StoryListSerializer
+    permission_classes = [permissions.AllowAny]
+
+class StoryDetailView(generics.RetrieveAPIView):
+    queryset = Story.objects.all()
+    serializer_class = StorySerializer
+    lookup_field = 'id'
+    permission_classes = [permissions.AllowAny]
+
+class HeroView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def get(self, request):
+        hero = Hero.objects.first() or Hero.objects.create(title="Welcome to Videeptha Foods")
+        return Response(HeroSerializer(hero).data)
+
+class ThemeView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def get(self, request):
+        branding = WebsiteBranding.objects.first() or WebsiteBranding.objects.create(name="Videeptha Foods")
+        typography = WebsiteTypography.objects.first() or WebsiteTypography.objects.create(name="Default Typography")
+        footer = WebsiteFooter.objects.first() or WebsiteFooter.objects.create(name="Main Footer")
+        theme = WebsiteTheme.objects.first() or WebsiteTheme.objects.create(name="Global Theme")
+        
+        return Response({
+            "branding": WebsiteBrandingSerializer(branding).data,
+            "typography": WebsiteTypographySerializer(typography).data,
+            "footer": WebsiteFooterSerializer(footer).data,
+            "theme": WebsiteThemeSerializer(theme).data
+        })
+
+class NavigationDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def get(self, request):
+        nav = Navigation.objects.first()
+        if not nav: return Response({"items": []})
+        return Response(NavigationSerializer(nav).data)
+
+class PolicyListView(generics.ListAPIView):
+    serializer_class = PolicySerializer
+    permission_classes = [permissions.AllowAny]
+    def get_queryset(self):
+        return Policy.objects.filter(is_active=True).order_by('order')
+
+class PromotionListView(generics.ListAPIView):
+    serializer_class = PromotionSerializer
+    permission_classes = [permissions.AllowAny]
+    def get_queryset(self):
+        return Promotion.objects.filter(is_active=True).order_by('order')
+
+class OrderListView(generics.ListCreateAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self):
+        return Order.objects.filter(user_id=str(self.request.user.id)).order_by('-created_at')
+    def perform_create(self, serializer):
+        serializer.save(user_id=str(self.request.user.id), order_number=f"ORD-{datetime.datetime.now().strftime('%Y%m%d')}-{datetime.datetime.now().microsecond}")
+
+class OrderDetailView(generics.RetrieveAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'id'
+    def get_queryset(self):
+        return Order.objects.filter(user_id=str(self.request.user.id))
+
+class SupportTicketListView(generics.ListCreateAPIView):
+    serializer_class = SupportTicketSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self):
+        return SupportTicket.objects.filter(user_id=str(self.request.user.id)).order_by('-created_at')
+    def perform_create(self, serializer):
+        serializer.save(user_id=str(self.request.user.id))
+
+class SupportTicketDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = SupportTicketSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'id'
+    def get_queryset(self):
+        return SupportTicket.objects.filter(user_id=str(self.request.user.id))
+
+class FavoriteListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self, request):
+        favorites = Favorite.objects.filter(user=request.user)
+        return Response([f.product_id for f in favorites])
+
+class FavoriteRemoveView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def delete(self, request, product_id):
+        Favorite.objects.filter(user=request.user, product_id=product_id).delete()
+        return Response(status=204)
+
+class TrackProductEventView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def post(self, request):
+        return Response({"status": "tracked"})
+
+class AdminAnalyticsView(APIView):
+    permission_classes = [IsRoleBasedAdminOrReadOnly]
+    def get(self, request):
+        analytics = ProductAnalytics.objects.all().order_by('-views')
+        return Response([{"product_id": a.product_id, "views": a.views} for a in analytics])
+
+class DetectLocationView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def get(self, request):
+        return Response({"country": "IN"})
